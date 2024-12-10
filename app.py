@@ -51,14 +51,15 @@ def check_deforestation():
         
 
         # Convert GeoJSON to Earth Engine Geometry
+        # Convert GeoJSON to Earth Engine Geometry
         roi = ee.Geometry.Polygon(data['features'][0]['geometry']['coordinates'])
-
+        
         # Load the JRC Global Forest Change dataset
         jrc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11').select('treecover2000').clip(roi)
-
+        
         # Define forest in 2000 where tree cover >30%
         baseline_forest_mask = jrc.gt(30).rename('BaselineForest')
-
+        
         # Load the Dynamic World dataset for recent tree cover
         dynamic_world = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
             .filterDate('2021-01-01', '2024-12-31') \
@@ -66,10 +67,10 @@ def check_deforestation():
             .median() \
             .select('trees') \
             .clip(roi)
-
+        
         # Define forest in 2023 where tree cover >50%
         recent_forest_mask = dynamic_world.gt(50).rename('RecentForest')
-
+        
         # Detect deforestation: areas in baselineForestMask but not in recentForestMask
         deforestation_mask = baseline_forest_mask.And(recent_forest_mask.Not()).rename('Deforestation')
         
@@ -77,7 +78,7 @@ def check_deforestation():
         deforestation_polygons = deforestation_mask.updateMask(deforestation_mask) \
             .reduceToVectors({
                 'reducer': ee.Reducer.countEvery(),
-                'geometry': roi,  # Ensure roi is an ee.Geometry, not just coordinates
+                'geometry': roi,  # Use ee.Geometry.Polygon (already handled)
                 'scale': 30,
                 'maxPixels': 1e9,
                 'bestEffort': True,
@@ -98,8 +99,9 @@ def check_deforestation():
                 "message": f"Deforestation polygons found: {deforestation_count}",
                 "polygons": deforestation_polygons.getInfo(),
             }
-
+        
         return jsonify(result)
+
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
