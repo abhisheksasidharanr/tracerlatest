@@ -8,21 +8,31 @@ app = Flask(__name__)
 # Initialize Earth Engine using a service account
 def initialize_earth_engine():
     try:
-        # Retrieve the service account credentials from the environment variable
+        # Retrieve the service account credentials from the environment variable or file
         file_path = "credentials.json"
-        with open(file_path, "r") as file:
-            service_account_json = file.read()
-            if not service_account_json:
-                raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set.")
+        
+        # Check if the file exists, if not use the environment variable
+        if os.path.exists(file_path):
+            with open(file_path, "r") as file:
+                service_account_json = file.read()
+        else:
+            service_account_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+        
+        if not service_account_json:
+            raise ValueError("GOOGLE_APPLICATION_CREDENTIALS_JSON environment variable not set or file not found.")
 
-                # Convert the JSON string to a dictionary
-                service_account_info = json.loads(service_account_json)
+        # Convert the JSON string to a dictionary
+        service_account_info = json.loads(service_account_json)
 
-                # Authenticate with Earth Engine using the service account
-                credentials = ee.ServiceAccountCredentials(email=None, key_data=json.dumps(service_account_info))
-                ee.Initialize(credentials)
+        # Authenticate with Earth Engine using the service account
+        credentials = ee.ServiceAccountCredentials(
+            email=None, 
+            key_data=json.dumps(service_account_info)
+        )
+        ee.Initialize(credentials)
 
-                print("Earth Engine API initialized successfully!")
+        print("Earth Engine API initialized successfully!")
+
     except Exception as e:
         print(f"Error initializing Earth Engine API: {e}")
         raise e
