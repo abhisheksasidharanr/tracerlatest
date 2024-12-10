@@ -34,6 +34,19 @@ def initialize_earth_engine():
         print(f"Error initializing Earth Engine API: {e}")
         raise e
 
+def calculate_area_in_hectares(roi):   
+    
+    # Calculate the area of the polygon in square meters
+    area_square_meters = roi.area().getInfo()
+    
+    # Convert area to hectares (1 hectare = 10,000 square meters)
+    area_hectares = area_square_meters / 10000
+    
+    # Round the area to 2 decimal places
+    area_hectares_rounded = round(area_hectares, 2)
+    
+    return area_hectares_rounded
+    
 # Initialize Earth Engine when the app starts
 initialize_earth_engine()
 
@@ -50,7 +63,7 @@ def check_deforestation():
         return jsonify({"error": "GeoJSON data is required"}), 400
     geometry = geojson['features'][0]['geometry']
     roi = ee.Geometry(geometry)
-
+    area = calculate_area_in_hectares(roi)
     
     # Load the JRC Global Forest Change (2020) dataset
     jrc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11').select('treecover2000').clip(roi)
@@ -90,7 +103,7 @@ def check_deforestation():
     else:
         deforestationArray = {"status": False, "details":deforestation_data}
     result = {
-        "deforestation" : deforestationArray
+        "area":area, "deforestation" : deforestationArray
     }
     return jsonify(result)
 
