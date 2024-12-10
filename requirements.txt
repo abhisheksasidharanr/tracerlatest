@@ -1,0 +1,6 @@
+Flask==2.3.2
+Flask-Cors==3.0.10
+gunicorn==21.2.0  # Required for deployment (optional for local development)
+requests==2.31.0  # If your app makes HTTP requests
+geojson==3.0.0    # For handling GeoJSON files
+numpy==1.25.2     # Optional, for numerical calculations
