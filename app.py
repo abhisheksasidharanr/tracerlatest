@@ -9,7 +9,7 @@ app = Flask(__name__)
 def initialize_earth_engine():
     try:
         # Retrieve the service account credentials from the environment variable
-        service_account_json = '''{
+        service_account_json = r'''{
   "type": "service_account",
   "project_id": "ee-abhisheksasidharanr",
   "private_key_id": "9332dd99f683a6d41ea162c051c52627e5d75463",
