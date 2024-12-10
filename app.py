@@ -72,20 +72,20 @@ def check_deforestation():
 
         # Detect deforestation: areas in baselineForestMask but not in recentForestMask
         deforestation_mask = baseline_forest_mask.And(recent_forest_mask.Not()).rename('Deforestation')
-
+        
         # Convert deforestation raster mask to vector polygons
         deforestation_polygons = deforestation_mask.updateMask(deforestation_mask) \
             .reduceToVectors({
                 'reducer': ee.Reducer.countEvery(),
-                'geometry': roi,
+                'geometry': roi,  # Ensure roi is an ee.Geometry, not just coordinates
                 'scale': 30,
                 'maxPixels': 1e9,
                 'bestEffort': True,
             })
-
+        
         # Count the number of deforestation polygons
         deforestation_count = deforestation_polygons.size().getInfo()
-
+        
         # Prepare the result
         if deforestation_count == 0:
             result = {
