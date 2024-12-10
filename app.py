@@ -104,15 +104,20 @@ def check_deforestation():
     # except Exception as e:
     #     return jsonify({"error": str(e)}), 500
 
-    
+    geojson = request.get_json()
 
-    roi = ee.Geometry.Polygon([
-        [[35.30311547038008, -0.36029597397167934],
-         [35.30534706828047, -0.357806932879987],
-         [35.30680618998457, -0.3590943680120164],
-         [35.304917914838086, -0.3610684348620916],
-         [35.30311547038008, -0.36029597397167934]]
-    ])
+    if not geojson:
+        return jsonify({"error": "GeoJSON data is required"}), 400
+    geometry = geojson['features'][0]['geometry']
+    roi = ee.Geometry(geometry)
+
+    # roi = ee.Geometry.Polygon([
+    #     [[35.30311547038008, -0.36029597397167934],
+    #      [35.30534706828047, -0.357806932879987],
+    #      [35.30680618998457, -0.3590943680120164],
+    #      [35.304917914838086, -0.3610684348620916],
+    #      [35.30311547038008, -0.36029597397167934]]
+    # ])
 
     # Load the JRC Global Forest Change (2020) dataset
     jrc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11').select('treecover2000').clip(roi)
