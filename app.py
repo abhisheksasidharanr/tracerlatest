@@ -85,9 +85,9 @@ def check_deforestation():
     deforestation_data = deforestation_polygons.getInfo()
     # Prepare response
     if deforestation_size == 0:
-        deforestationArray = {"status": true}
+        deforestationArray = {"status": True}
     else:
-        deforestationArray = {"status": false, "details":deforestation_data}
+        deforestationArray = {"status": False, "details":deforestation_data}
     result = {
         "deforestation" : deforestationArray
     }
