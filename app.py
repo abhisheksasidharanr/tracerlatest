@@ -45,13 +45,13 @@ def check_deforestation():
     try:
         # Get GeoJSON polygon from the request
         data = request.json
-        if "polygon" not in data:
+        if "features" not in data:
             return jsonify({"error": "GeoJSON polygon is required."}), 400
 
         polygon = data["polygon"]
 
         # Convert GeoJSON to Earth Engine Geometry
-        roi = ee.Geometry.Polygon(polygon)
+        roi = ee.Geometry.Polygon(data)
 
         # Load the JRC Global Forest Change dataset
         jrc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11').select('treecover2000').clip(roi)
