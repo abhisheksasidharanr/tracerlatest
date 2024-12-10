@@ -48,7 +48,7 @@ def check_deforestation():
         if "features" not in data:
             return jsonify({"error": "GeoJSON polygon is required."}), 400
 
-        polygon = data["polygon"]
+        
 
         # Convert GeoJSON to Earth Engine Geometry
         roi = ee.Geometry.Polygon(data)
