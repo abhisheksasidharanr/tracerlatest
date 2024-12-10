@@ -9,7 +9,7 @@ app = Flask(__name__)
 def initialize_earth_engine():
     try:
         # Retrieve the service account credentials from the environment variable
-        service_account_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+        service_account_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')
         if not service_account_json:
             raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set.")
 
