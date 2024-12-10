@@ -26,7 +26,7 @@ def initialize_earth_engine():
             raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set.")
 
         # Convert the JSON string to a dictionary
-        service_account_info = service_account_json
+        service_account_info = json.loads(service_account_json)
 
         # Authenticate with Earth Engine using the service account
         credentials = ee.ServiceAccountCredentials(email=None, key_data=json.dumps(service_account_info))
