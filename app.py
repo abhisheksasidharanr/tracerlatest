@@ -72,13 +72,12 @@ def check_deforestation():
         deforestation_mask = baseline_forest_mask.And(recent_forest_mask.Not()).rename('Deforestation')
         
         # Convert deforestation raster mask to vector polygons
-        deforestation_polygons = deforestation_mask.updateMask(deforestation_mask) \
-            .reduceToVectors({
-                'geometryType': 'polygon',  # Ensure the geometry is treated as polygons
-                'scale': 30,
-                'maxPixels': 1e9,
-                'bestEffort': True,
-            })
+        deforestation_polygons = ee.Reducer.toVectors({
+            'geometryType': 'polygon',
+            'scale': 30,
+            'maxPixels': 1e9,
+            'bestEffort': True
+        })(deforestation_mask)
         
         # Get the count of deforestation polygons
         deforestation_count = deforestation_polygons.size().getInfo()
