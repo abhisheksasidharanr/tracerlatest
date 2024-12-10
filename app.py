@@ -51,7 +51,7 @@ def check_deforestation():
         
 
         # Convert GeoJSON to Earth Engine Geometry
-        roi = ee.Geometry.Polygon(data['features]['geometry']['coordinates'])
+        roi = ee.Geometry.Polygon(data['features']['geometry']['coordinates'])
 
         # Load the JRC Global Forest Change dataset
         jrc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11').select('treecover2000').clip(roi)
