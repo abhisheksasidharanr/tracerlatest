@@ -145,14 +145,14 @@ def check_deforestation():
 
     # Check if deforestation polygons exist
     deforestation_size = deforestation_polygons.size().getInfo()
-
+    deforestation_data = deforestation_polygons.getInfo()
     # Prepare response
     if deforestation_size == 0:
         response = {"message": "Deforestation-Free: No deforestation detected within the ROI."}
     else:
-        response = {"message": "Deforestation Happened: Deforestation polygons exist within the ROI.", "poly":deforestation_polygons}
+        response = {"message": "Deforestation Happened: Deforestation polygons exist within the ROI.", "poly":deforestation_data}
 
-    return response
+    return jsonify(response)
 
 
 if __name__ == "__main__":
