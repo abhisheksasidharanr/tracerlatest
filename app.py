@@ -80,7 +80,11 @@ def check_deforestation():
         })(deforestation_mask)
         
         # Get the count of deforestation polygons
-        deforestation_count = deforestation_polygons.size().getInfo()
+        # Convert deforestation mask to a feature collection
+        deforestation_fc = deforestation_mask.reduceToImage(['sum'], 30).gt(0).selfMask().reduceToVectors(geometry=roi, scale=30, maxPixels=1e9)
+        
+        # Get the count of deforestation polygons
+        deforestation_count = deforestation_fc.size().getInfo()
         
         # Prepare the result
         if deforestation_count == 0:
