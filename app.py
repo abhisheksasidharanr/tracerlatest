@@ -150,7 +150,7 @@ def check_deforestation():
     if deforestation_size == 0:
         response = {"message": "Deforestation-Free: No deforestation detected within the ROI."}
     else:
-        response = {"message": "Deforestation Happened: Deforestation polygons exist within the ROI."}
+        response = {"message": "Deforestation Happened: Deforestation polygons exist within the ROI.", "poly":deforestation_polygons}
 
     return response
 
