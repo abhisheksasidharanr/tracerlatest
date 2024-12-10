@@ -54,6 +54,7 @@ def check_deforestation():
         # Convert GeoJSON to Earth Engine Geometry
         # Convert GeoJSON to Earth Engine Geometry
         # Convert GeoJSON to Earth Engine Geometry
+        # Convert GeoJSON to Earth Engine Geometry
         roi = ee.Geometry.Polygon(data['features'][0]['geometry']['coordinates'])
         
         # Load the JRC Global Forest Change dataset
@@ -79,7 +80,6 @@ def check_deforestation():
         # Convert deforestation raster mask to vector polygons
         deforestation_polygons = deforestation_mask.updateMask(deforestation_mask) \
             .reduceToVectors({
-                'reducer': ee.Reducer.countEvery(),
                 'geometryType': 'polygon',  # Ensure the geometry is treated as polygons
                 'scale': 30,
                 'maxPixels': 1e9,
@@ -103,9 +103,6 @@ def check_deforestation():
             }
         
         return jsonify(result)
-
-
-
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
