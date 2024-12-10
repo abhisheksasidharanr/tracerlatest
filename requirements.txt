@@ -4,4 +4,4 @@ gunicorn==21.2.0  # Required for deployment (optional for local development)
 requests==2.31.0  # If your app makes HTTP requests
 geojson==3.1.0    # For handling GeoJSON files
 numpy==1.25.2     # Optional, for numerical calculations
-earthengine-api==0.1.347
+earthengine-api==1.4.3
