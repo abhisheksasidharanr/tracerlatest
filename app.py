@@ -48,12 +48,6 @@ def check_deforestation():
         if "features" not in data:
             return jsonify({"error": "GeoJSON polygon is required."}), 400
 
-        
-
-        # Convert GeoJSON to Earth Engine Geometry
-        # Convert GeoJSON to Earth Engine Geometry
-        # Convert GeoJSON to Earth Engine Geometry
-        # Convert GeoJSON to Earth Engine Geometry
         # Convert GeoJSON to Earth Engine Geometry
         roi = ee.Geometry.Polygon(data['features'][0]['geometry']['coordinates'])
         
@@ -86,7 +80,7 @@ def check_deforestation():
                 'bestEffort': True,
             })
         
-        # Count the number of deforestation polygons
+        # Get the count of deforestation polygons
         deforestation_count = deforestation_polygons.size().getInfo()
         
         # Prepare the result
