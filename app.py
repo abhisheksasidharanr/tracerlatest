@@ -1,10 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import ee
 import os
 import json
 
 app = Flask(__name__)
-
+CORS(app)
 # Initialize Earth Engine using a service account
 def initialize_earth_engine():
     try:
