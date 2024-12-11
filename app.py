@@ -157,11 +157,12 @@ def check_deforestation():
 
     # Filter buildings that intersect the ROI
     buildings_inside_polygon = open_buildings.filterBounds(roi)
+    building_data = buildings_inside_polygon.getInfo()
     count = buildings_inside_polygon.size().getInfo()
     if count==0:
         builtupArea = {"status": True}
     else:
-        builtupArea = {"status": False, "polygon":buildings_inside_polygon}
+        builtupArea = {"status": False, "polygon":building_data}
 
     
     result = {
