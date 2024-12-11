@@ -105,23 +105,16 @@ def check_deforestation():
 
     
 
-    #protected area check
-    # Load the protected areas dataset
-    protected_areas = ee.FeatureCollection('WCMC/WDPA/current/polygons')
+    #protected area check    
+    # Load the WDPA dataset
+    wdpa = ee.FeatureCollection('WCMC/WDPA/current/polygons')
 
-    # Filter protected areas intersecting with the ROI
-    filtered_protected_areas = protected_areas.filterBounds(roi)
+    # Filter the WDPA dataset to get polygons that intersect with the ROI
+    intersecting_areas = wdpa.filterBounds(roi)
 
-    # Intersect the filtered areas with the ROI and clip them
-    clipped_protected_areas = filtered_protected_areas.map(
-        lambda feature: ee.Feature(
-            feature.geometry().intersection(roi, ee.ErrorMargin(1))
-        )
-    ).filter(ee.Filter.notNull(['geometry']))  # Ensure valid geometries only
-
-    # Get the count of protected areas
-    protectedCount = clipped_protected_areas.size().getInfo()
-    if protectedCount==0:
+    # Count the number of intersecting features
+    intersecting_count = intersecting_areas.size().getInfo()
+    if intersecting_count==0:
         protectedAreaArray = {"status":False}
     else:
         protectedAreaArray = {"status":True}
