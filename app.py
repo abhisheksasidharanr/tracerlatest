@@ -115,9 +115,9 @@ def check_deforestation():
     # Count the number of intersecting features
     intersecting_count = intersecting_areas.size().getInfo()
     if intersecting_count==0:
-        protectedAreaArray = {"status":False, "message":intersecting_count}
+        protectedAreaArray = {"status":True}
     else:
-        protectedAreaArray = {"status":True, "message":intersecting_count}
+        protectedAreaArray = {"status":False}
     
     result = {
         "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray
