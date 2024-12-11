@@ -103,7 +103,7 @@ def check_deforestation():
     else:
         deforestationArray = {"status": False, "details":deforestation_data}
     result = {
-        "area":area, "deforestation" : deforestationArray
+        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray
     }
     return jsonify(result)
 
