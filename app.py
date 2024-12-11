@@ -118,9 +118,40 @@ def check_deforestation():
         protectedAreaArray = {"status":True}
     else:
         protectedAreaArray = {"status":False}
+
+    #Onland Check
+    # Load the MODIS Land Cover dataset and select the LC_Type1 band
+    modis_land_cover = ee.ImageCollection('MODIS/006/MCD12Q1').select('LC_Type1')
+
+    # Get the most recent land cover image and clip it to the ROI
+    land_cover_image = modis_land_cover.sort('system:time_start', False).first().clip(roi)
+
+    # Reduce the image to extract land cover type within the polygon
+    land_cover = land_cover_image.reduceRegion(
+        reducer=ee.Reducer.mode(),
+        geometry=roi,
+        scale=500,
+        maxPixels=1e6
+    )
+
+    # Get the dominant land cover type
+    land_cover_type = land_cover.get('LC_Type1')
+
+    # Check if the land cover type corresponds to land
+    is_on_land = ee.Algorithms.If(
+        land_cover_type,
+        ee.Number(land_cover_type).neq(0).And(ee.Number(land_cover_type).neq(17)),
+        False
+    )
+
+    # Evaluate the result and return
+    if is_on_land.getInfo() ==1:
+        onLandArray = {"status": True}
+    else:
+        onLandArray = {"status": False}
     
     result = {
-        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray
+        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray
     }
     return jsonify(result)
 
