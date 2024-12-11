@@ -149,6 +149,20 @@ def check_deforestation():
         onLandArray = {"status": True}
     else:
         onLandArray = {"status": False}
+
+    #check for builtuparea   
+
+    # Load the Open Buildings dataset
+    open_buildings = ee.FeatureCollection('GOOGLE/Research/open-buildings/v3/polygons')
+
+    # Filter buildings that intersect the ROI
+    buildings_inside_polygon = open_buildings.filterBounds(roi)
+    count = buildings_inside_polygon.size().getInfo()
+    if count==0:
+        builtupArea = {"status": True}
+    else:
+        builtupArea = {"status": False, "polygon":buildings_inside_polygon}
+
     
     result = {
         "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray
