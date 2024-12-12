@@ -47,11 +47,9 @@ def calculate_area_in_hectares(roi):
     
     return area_hectares_rounded
 # Function for cloud masking Sentinel-2 data
-def cloud_masking(image):
-    # Sentinel-2 cloud mask based on QA60
-    QA60 = image.select(['B8'])
-    cloud_mask = QA60.bitwiseAnd(1).eq(0)
-    return image.updateMask(cloud_mask)
+# Function to mask cloudy or invalid pixels (optional, based on the dataset)
+def mask_clouds(image):
+    return image.updateMask(image.mask())
     
 # Initialize Earth Engine when the app starts
 initialize_earth_engine()
@@ -115,11 +113,8 @@ def check_deforestation():
     dynamicWorld = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
         .filterBounds(roi) \
         .filterDate('2021-01-01', '2024-12-31') \
-        .select('trees')  # Select the classification band
+        .select('trees')  # Select the classification band   
     
-    # Function to mask cloudy or invalid pixels (optional, based on the dataset)
-    def mask_clouds(image):
-        return image.updateMask(image.mask())
     
     # Preprocess Dynamic World data (masking clouds if necessary)
     dynamicWorldPreprocessed = dynamicWorld.map(mask_clouds)
