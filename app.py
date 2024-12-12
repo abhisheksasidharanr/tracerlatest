@@ -140,30 +140,29 @@ def check_deforestation():
     # Detect deforestation: overlay change detection with JRC forest map (1 = forest)
     deforestation = significant_change.And(jrc2020_clipped.eq(1))    
     
-    # Use connectedComponents to identify connected regions (deforestation areas)
+    # Connected components to detect regions of deforestation
     deforestation_components = deforestation.connectedComponents(
         ee.Kernel.plus(1),  # Connectivity (4-connected pixels)
         maxSize=128
     )
     
-    # Extract the labeled components (connected regions)
+    # Extract labeled regions (connected areas)
     deforestation_labeled = deforestation_components.select('labels')
     
     # Convert the labeled regions into polygons (vectorize)
     deforestation_polygons = deforestation_labeled.reduceToVectors(
-        reducer=ee.Reducer.countEvery(),
+        reducer=ee.Reducer.max(),  # Use max to retain the largest component values
         maxPixels=1e8
     )
     
-    # Convert the result to GeoJSON (or similar) to view details
+    # Convert the result to GeoJSON for viewing (limit the area if needed)
     deforestation_polygons_geojson = deforestation_polygons.getInfo()
     
-    # Prepare response
-    if len(deforestation_polygons_geojson['features']) == 0:
-        deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
-    else:
+    # Prepare response based on the presence of deforestation polygons
+    if len(deforestation_polygons_geojson['features']) > 0:
         deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
-
+    else:
+        deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
     
 
     #protected area check    
