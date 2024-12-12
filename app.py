@@ -100,42 +100,30 @@ def check_deforestation():
 
 
     # Load the JRC Global Forest Change (GFC) 2020 dataset
-    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()
+    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()   
     
-    # Clip to region of interest (ROI)
+    
+    # Clip JRC data to the ROI
     jrc2020_clipped = jrc2020.clip(roi)
     
-    # Load Sentinel-1 data (GRD product)
-    sentinel1 = ee.ImageCollection('COPERNICUS/S1_GRD') \
-        .filterBounds(roi) \
-        .filterDate('2021-01-01', '2023-12-31') \
-        .filter(ee.Filter.eq('instrumentMode', 'IW')) \
-        .select('VV')
-    
-    # Load Sentinel-2 data (Surface Reflectance)
+    # Load Sentinel-2 data (B8 band for near-infrared)
     sentinel2 = ee.ImageCollection('COPERNICUS/S2') \
         .filterBounds(roi) \
         .filterDate('2021-01-01', '2023-12-31') \
         .select('B8')
     
-    # Preprocess Sentinel-1 data (Example: No preprocessing in this example)
-    sentinel1_preprocessed = sentinel1.map(lambda image: image)
+    # Preprocess Sentinel-2 data (e.g., cloud masking can be applied here if necessary)
+    sentinel2_preprocessed = sentinel2.map(lambda image: image)  # Add cloud masking if required
     
-    # Preprocess Sentinel-2 data (Example: No preprocessing in this example)
-    sentinel2_preprocessed = sentinel2.map(lambda image: image)
-    
-    # Calculate change detection metrics (Median subtraction, assuming it's a proxy for change)
-    sentinel1_change = sentinel1_preprocessed.median().subtract(sentinel1_preprocessed.median())
+    # Calculate change detection on Sentinel-2 (here, simply subtracting median)
     sentinel2_change = sentinel2_preprocessed.median().subtract(sentinel2_preprocessed.median())
     
-    # Define thresholds for detecting significant changes
-    threshold1 = 3  # Sentinel-1 threshold (adjust as needed)
-    threshold2 = 0.3  # Sentinel-2 threshold (adjust as needed)
+    # Threshold for detecting significant change (adjust based on observations)
+    threshold2 = 0.3
+    significant_change = sentinel2_change.abs().gt(threshold2)
     
-    # Create a mask for significant changes
-    significant_change = sentinel1_change.abs().gt(threshold1).And(
-        sentinel2_change.abs().gt(threshold2)
-    )
+    # Detect deforestation: overlay change detection with JRC forest map (1 = forest)
+    deforestation = significant_change.And(jrc2020_clipped.eq(1))
     
     # Detect deforestation: overlay significant change with the JRC forest cover map (1 = forest cover)
     deforestation = significant_change.And(jrc2020_clipped.eq(1))
