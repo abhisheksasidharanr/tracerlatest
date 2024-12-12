@@ -141,15 +141,15 @@ def check_deforestation():
     deforestation = significant_change.And(jrc2020_clipped.eq(1))
     # Use connectedComponents to identify connected regions (deforestation areas)
     deforestation_components = deforestation.connectedComponents(
-        connectivity=ee.Kernel.plus(1),  # 4-connected neighborhood
+        ee.Kernel.plus(1),  # Connectivity (4-connected pixels)
         maxSize=128
     )
     
-    # Extract the labeled components and mask the components where the value is greater than 0
-    deforestation_masked = deforestation_components.select('labels').gt(0)
+    # Extract the labeled components (connected regions)
+    deforestation_labeled = deforestation_components.select('labels')
     
-    # Convert components to polygons (vectorize)
-    deforestation_polygons = deforestation_masked.reduceToVectors(
+    # Convert the labeled regions into polygons (vectorize)
+    deforestation_polygons = deforestation_labeled.reduceToVectors(
         reducer=ee.Reducer.countEvery(),
         maxPixels=1e8
     )
