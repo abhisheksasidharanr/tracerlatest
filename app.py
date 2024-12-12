@@ -216,9 +216,25 @@ def check_deforestation():
     else:
         builtupArea = {"status": False, "polygon":building_data}
 
+
+    # Load the SRTM dataset
+    srtm = ee.Image('USGS/SRTMGL1_003')   
+    # Clip the DEM to the polygon
+    clipped_dem = srtm.clip(roi)
+    
+    # Calculate the mean elevation within the polygon
+    mean_elevation = clipped_dem.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=roi,
+        scale=30,  # Adjust the scale as needed for your resolution
+        maxPixels=1e9
+    ).get('elevation')
+    
+    # Fetch and print the result
+    mean_elevation_value = mean_elevation.getInfo()
     
     result = {
-        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea
+        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value
     }
     return jsonify(result)
 
