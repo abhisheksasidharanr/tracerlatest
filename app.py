@@ -139,15 +139,17 @@ def check_deforestation():
     
     # Detect deforestation: overlay significant change with the JRC forest cover map (1 = forest cover)
     deforestation = significant_change.And(jrc2020_clipped.eq(1))
-    deforestation_size = deforestation.size().getInfo()
-    deforestation_data = deforestation.getInfo()
+    deforestation_size = deforestation.reduceRegion(
+        reducer=ee.Reducer.count(), 
+        geometry=roi,
+        scale=30
+    ).getInfo()
     
     # Prepare response
-    if deforestation_size == 0:
+    if deforestation_size['VV'] == 0:  # No deforestation detected
         deforestationArray = {"status": True}
     else:
-        deforestationArray = {"status": False, "details":deforestation_data}
-
+        deforestationArray = {"status": False, "details": deforestation_size}
     
 
     #protected area check    
