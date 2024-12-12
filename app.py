@@ -125,7 +125,7 @@ def check_deforestation():
     # To compare, you can use pre-2020 data as well (Optional)
     sentinel2_before_2020 = ee.ImageCollection('COPERNICUS/S2') \
         .filterBounds(roi) \
-        .filterDate('2018-01-01', '2020-12-31') \
+        .filterDate('2010-01-01', '2020-12-31') \
         .select('B8')
     
     sentinel2_median_before = sentinel2_before_2020.median()
@@ -138,11 +138,8 @@ def check_deforestation():
     significant_change = sentinel2_change.abs().gt(threshold)
     
     # Detect deforestation: overlay change detection with JRC forest map (1 = forest)
-    deforestation = significant_change.And(jrc2020_clipped.eq(1))
-
+    deforestation = significant_change.And(jrc2020_clipped.eq(1))    
     
-    # Detect deforestation: overlay significant change with the JRC forest cover map (1 = forest cover)
-    deforestation = significant_change.And(jrc2020_clipped.eq(1))
     # Use connectedComponents to identify connected regions (deforestation areas)
     deforestation_components = deforestation.connectedComponents(
         ee.Kernel.plus(1),  # Connectivity (4-connected pixels)
