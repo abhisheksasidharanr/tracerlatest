@@ -146,16 +146,19 @@ def check_deforestation():
         maxSize=128
     )
     
-    # Extract labeled regions (connected areas)
+    # Extract labeled regions (connected components)
     deforestation_labeled = deforestation_components.select('labels')
     
-    # Convert the labeled regions into polygons (vectorize)
-    deforestation_polygons = deforestation_labeled.reduceToVectors(
+    # Convert the labeled regions into a binary image (presence/absence of deforestation)
+    deforestation_binary = deforestation_labeled.gt(0)  # Value greater than 0 means deforestation
+    
+    # Convert the binary image into polygons (vectorize)
+    deforestation_polygons = deforestation_binary.reduceToVectors(
         reducer=ee.Reducer.max(),  # Use max to retain the largest component values
         maxPixels=1e8
     )
     
-    # Convert the result to GeoJSON for viewing (limit the area if needed)
+    # Convert the result to GeoJSON for viewing
     deforestation_polygons_geojson = deforestation_polygons.getInfo()
     
     # Prepare response based on the presence of deforestation polygons
@@ -163,7 +166,6 @@ def check_deforestation():
         deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
     else:
         deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
-    
 
     #protected area check    
     # Load the WDPA dataset
