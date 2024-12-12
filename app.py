@@ -104,7 +104,7 @@ def check_deforestation():
     # deforestation_size = deforestation_polygons.size().getInfo()
     # deforestation_data = deforestation_polygons.getInfo()
 
-
+    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()
     # Clip JRC data to the ROI
     jrc2020_clipped = jrc2020.clip(roi)
     
