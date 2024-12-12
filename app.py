@@ -159,7 +159,7 @@ def check_deforestation():
     
     # Prepare response
     if len(deforestation_polygons_geojson['features']) == 0:
-        deforestationArray = {"status": True}
+        deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
     else:
         deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
 
