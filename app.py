@@ -65,38 +65,83 @@ def check_deforestation():
     roi = ee.Geometry(geometry)
     area = calculate_area_in_hectares(roi)
     
-    # Load the JRC Global Forest Change (2020) dataset
-    jrc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11').select('treecover2000').clip(roi)
+    # # Load the JRC Global Forest Change (2020) dataset
+    # jrc = ee.Image('UMD/hansen/global_forest_change_2023_v1_11').select('treecover2000').clip(roi)
     
-    # Forest is defined where tree cover is > 30% in 2000
-    baseline_forest_mask = jrc.gt(98.5).rename('BaselineForest')
+    # # Forest is defined where tree cover is > 30% in 2000
+    # baseline_forest_mask = jrc.gt(98.5).rename('BaselineForest')
 
-    # Load the Dynamic World dataset (2023) and focus on tree cover
-    dynamic_world = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
-                        .filterDate('2021-01-01', '2024-12-31') \
-                        .filterBounds(roi) \
-                        .median() \
-                        .select('trees') \
-                        .clip(roi)
+    # # Load the Dynamic World dataset (2023) and focus on tree cover
+    # dynamic_world = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
+    #                     .filterDate('2021-01-01', '2024-12-31') \
+    #                     .filterBounds(roi) \
+    #                     .median() \
+    #                     .select('trees') \
+    #                     .clip(roi)
 
-    # Recent forest is defined where tree cover probability > 50% in 2023
-    recent_forest_mask = dynamic_world.gt(98.5).rename('RecentForest')
+    # # Recent forest is defined where tree cover probability > 50% in 2023
+    # recent_forest_mask = dynamic_world.gt(98.5).rename('RecentForest')
 
-    # Detect deforestation: areas in baselineForestMask but not in recentForestMask
-    deforestation_mask = baseline_forest_mask.And(recent_forest_mask.Not()).rename('Deforestation')
+    # # Detect deforestation: areas in baselineForestMask but not in recentForestMask
+    # deforestation_mask = baseline_forest_mask.And(recent_forest_mask.Not()).rename('Deforestation')
 
-    # Convert deforestation raster mask to vector polygons
-    deforestation_polygons = deforestation_mask.updateMask(deforestation_mask).reduceToVectors(
-        reducer=ee.Reducer.countEvery(),
-        geometry=roi,
-        scale=30,
-        maxPixels=1e9,
-        bestEffort=True
+    # # Convert deforestation raster mask to vector polygons
+    # deforestation_polygons = deforestation_mask.updateMask(deforestation_mask).reduceToVectors(
+    #     reducer=ee.Reducer.countEvery(),
+    #     geometry=roi,
+    #     scale=30,
+    #     maxPixels=1e9,
+    #     bestEffort=True
+    # )
+
+    # # Check if deforestation polygons exist
+    # deforestation_size = deforestation_polygons.size().getInfo()
+    # deforestation_data = deforestation_polygons.getInfo()
+
+
+    # Load the JRC Global Forest Change (GFC) 2020 dataset
+    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()
+    
+    # Clip to region of interest (ROI)
+    jrc2020_clipped = jrc2020.clip(roi)
+    
+    # Load Sentinel-1 data (GRD product)
+    sentinel1 = ee.ImageCollection('COPERNICUS/S1_GRD') \
+        .filterBounds(roi) \
+        .filterDate('2021-01-01', '2023-12-31') \
+        .filter(ee.Filter.eq('instrumentMode', 'IW')) \
+        .select('VV')
+    
+    # Load Sentinel-2 data (Surface Reflectance)
+    sentinel2 = ee.ImageCollection('COPERNICUS/S2') \
+        .filterBounds(roi) \
+        .filterDate('2021-01-01', '2023-12-31') \
+        .select('B8')
+    
+    # Preprocess Sentinel-1 data (Example: No preprocessing in this example)
+    sentinel1_preprocessed = sentinel1.map(lambda image: image)
+    
+    # Preprocess Sentinel-2 data (Example: No preprocessing in this example)
+    sentinel2_preprocessed = sentinel2.map(lambda image: image)
+    
+    # Calculate change detection metrics (Median subtraction, assuming it's a proxy for change)
+    sentinel1_change = sentinel1_preprocessed.median().subtract(sentinel1_preprocessed.median())
+    sentinel2_change = sentinel2_preprocessed.median().subtract(sentinel2_preprocessed.median())
+    
+    # Define thresholds for detecting significant changes
+    threshold1 = 3  # Sentinel-1 threshold (adjust as needed)
+    threshold2 = 0.3  # Sentinel-2 threshold (adjust as needed)
+    
+    # Create a mask for significant changes
+    significant_change = sentinel1_change.abs().gt(threshold1).And(
+        sentinel2_change.abs().gt(threshold2)
     )
-
-    # Check if deforestation polygons exist
-    deforestation_size = deforestation_polygons.size().getInfo()
-    deforestation_data = deforestation_polygons.getInfo()
+    
+    # Detect deforestation: overlay significant change with the JRC forest cover map (1 = forest cover)
+    deforestation = significant_change.And(jrc2020_clipped.eq(1))
+    deforestation_size = deforestation.size().getInfo()
+    deforestation_data = deforestation.getInfo()
+    
     # Prepare response
     if deforestation_size == 0:
         deforestationArray = {"status": True}
