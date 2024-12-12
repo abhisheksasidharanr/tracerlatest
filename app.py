@@ -49,7 +49,7 @@ def calculate_area_in_hectares(roi):
 # Function for cloud masking Sentinel-2 data
 def cloud_masking(image):
     # Sentinel-2 cloud mask based on QA60
-    QA60 = image.select(['QA60'])
+    QA60 = image.select(['B8'])
     cloud_mask = QA60.bitwiseAnd(1).eq(0)
     return image.updateMask(cloud_mask)
     
