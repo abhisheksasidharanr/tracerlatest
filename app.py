@@ -106,30 +106,37 @@ def check_deforestation():
 
 
     # Clip JRC data to the ROI
-    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()
     jrc2020_clipped = jrc2020.clip(roi)
     
     # Load Sentinel-2 data (B8 band for near-infrared)
     sentinel2 = ee.ImageCollection('COPERNICUS/S2') \
         .filterBounds(roi) \
-        .filterDate('2021-01-01', '2023-12-31') \
+        .filterDate('2021-01-01', ee.Date('2024-12-31')) \
         .select('B8')
     
-    
+    # Function for cloud masking Sentinel-2 data
+    def cloud_masking(image):
+        # Sentinel-2 cloud mask based on QA60
+        QA60 = image.select(['QA60'])
+        cloud_mask = QA60.bitwiseAnd(1).eq(0)
+        return image.updateMask(cloud_mask)
     
     # Preprocess Sentinel-2 data with cloud masking
     sentinel2_preprocessed = sentinel2.map(cloud_masking)
     
-    # Split data into before and after periods (for example)
-    sentinel2_before = sentinel2.filterDate('2021-01-01', '2022-01-01')
-    sentinel2_after = sentinel2.filterDate('2022-01-01', '2024-12-31')
+    # Calculate the median of the post-2020 data (after Dec 31, 2020)
+    sentinel2_median_after = sentinel2_preprocessed.median()
     
-    # Calculate the median of each time period
-    before_median = sentinel2_before.median()
-    after_median = sentinel2_after.median()
+    # To compare, you can use pre-2020 data as well (Optional)
+    sentinel2_before_2020 = ee.ImageCollection('COPERNICUS/S2') \
+        .filterBounds(roi) \
+        .filterDate('2018-01-01', '2020-12-31') \
+        .select('B8')
     
-    # Compute the change between the two periods
-    sentinel2_change = after_median.subtract(before_median)
+    sentinel2_median_before = sentinel2_before_2020.median()
+    
+    # Compute the change between the two periods (2020 vs 2021-2024)
+    sentinel2_change = sentinel2_median_after.subtract(sentinel2_median_before)
     
     # Threshold for detecting significant change (adjustable)
     threshold = 0.3
