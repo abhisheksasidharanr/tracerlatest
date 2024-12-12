@@ -114,12 +114,7 @@ def check_deforestation():
         .filterDate('2021-01-01', ee.Date('2024-12-31')) \
         .select('B8')
     
-    # Function for cloud masking Sentinel-2 data
-    def cloud_masking(image):
-        # Sentinel-2 cloud mask based on QA60
-        QA60 = image.select(['QA60'])
-        cloud_mask = QA60.bitwiseAnd(1).eq(0)
-        return image.updateMask(cloud_mask)
+    # Function for cloud masking Sentinel-2 data    
     
     # Preprocess Sentinel-2 data with cloud masking
     sentinel2_preprocessed = sentinel2.map(cloud_masking)
