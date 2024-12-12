@@ -104,62 +104,57 @@ def check_deforestation():
     # deforestation_size = deforestation_polygons.size().getInfo()
     # deforestation_data = deforestation_polygons.getInfo()
 
-    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()
-    # Clip JRC data to the ROI
-    jrc2020_clipped = jrc2020.clip(roi)
+    # Load JRC Forest Cover 2020 dataset
+    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()    
     
-    # Load Sentinel-2 data (B8 band for near-infrared)
-    sentinel2 = ee.ImageCollection('COPERNICUS/S2') \
+    
+    # Clip JRC forest cover data to the ROI
+    jrc2020Clipped = jrc2020.clip(roi)
+    
+    # Load Dynamic World V1 data for the period after Dec 31, 2020 (2021 onwards)
+    dynamicWorld = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
         .filterBounds(roi) \
-        .filterDate('2021-01-01', ee.Date('2024-12-31')) \
-        .select('B8')
+        .filterDate('2021-01-01', '2024-12-31') \
+        .select('trees')  # Select the classification band
     
-    # Function for cloud masking Sentinel-2 data    
+    # Function to mask cloudy or invalid pixels (optional, based on the dataset)
+    def mask_clouds(image):
+        return image.updateMask(image.mask())
     
-    # Preprocess Sentinel-2 data with cloud masking
-    sentinel2_preprocessed = sentinel2.map(cloud_masking)
+    # Preprocess Dynamic World data (masking clouds if necessary)
+    dynamicWorldPreprocessed = dynamicWorld.map(mask_clouds)
     
-    # Calculate the median of the post-2020 data (after Dec 31, 2020)
-    sentinel2_median_after = sentinel2_preprocessed.median()
+    # Calculate the mode of the Dynamic World data after 2020 (most frequent classification)
+    dynamicWorldModeAfter = dynamicWorldPreprocessed.mode()
     
-    # To compare, you can use pre-2020 data as well (Optional)
-    sentinel2_before_2020 = ee.ImageCollection('COPERNICUS/S2') \
+    # Load Dynamic World V1 data for the period before 2020 (2018-2020)
+    dynamicWorldBefore2020 = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
         .filterBounds(roi) \
-        .filterDate('2010-01-01', '2020-12-31') \
-        .select('B8')
+        .filterDate('2020-01-01', '2020-12-31') \
+        .select('trees')  # Select the classification band
     
-    sentinel2_median_before = sentinel2_before_2020.median()
+    # Calculate the mode of the Dynamic World data before 2020 (most frequent classification)
+    dynamicWorldModeBefore = dynamicWorldBefore2020.mode()
     
-    # Compute the change between the two periods (2020 vs 2021-2024)
-    sentinel2_change = sentinel2_median_after.subtract(sentinel2_median_before)
+    # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
+    dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
     
-    # Threshold for detecting significant change (adjustable)
-    threshold = 0.3
-    significant_change = sentinel2_change.abs().gt(threshold)
+    # Set a threshold for detecting significant change
+    threshold = 10  # Adjust based on classification changes
+    significantChange = dynamicWorldChange.abs().gt(threshold)
     
-    # Detect deforestation: overlay change detection with JRC forest map (1 = forest)
-    deforestation = significant_change.And(jrc2020_clipped.eq(1))    
+    # Detect deforestation by overlaying the change detection with the JRC forest map (1 = forest cover)
+    deforestation = significantChange.And(jrc2020Clipped.eq(1))
     
-    # Connected components to detect regions of deforestation
-    deforestation_components = deforestation.connectedComponents(
-        ee.Kernel.plus(1),  # Connectivity (4-connected pixels)
-        maxSize=128
+    # Vectorize the deforestation areas
+    deforestationVectors = deforestation.reduceToVectors(
+        reducer=ee.Reducer.countEvery(),
+        geometryType='polygon',
+        maxPixels=1e8,
+        scale=30  # Define a reasonable scale for vectorization
     )
-    
-    # Extract labeled regions (connected components)
-    deforestation_labeled = deforestation_components.select('labels')
-    
-    # Convert the labeled regions into a binary image (presence/absence of deforestation)
-    deforestation_binary = deforestation_labeled.gt(0)  # Value greater than 0 means deforestation
-    
-    # Convert the binary image into polygons (vectorize)
-    deforestation_polygons = deforestation_binary.reduceToVectors(
-        reducer=ee.Reducer.max(),  # Use max to retain the largest component values
-        maxPixels=1e8
-    )
-    
     # Convert the result to GeoJSON for viewing
-    deforestation_polygons_geojson = deforestation_polygons.getInfo()
+    deforestation_polygons_geojson = deforestationVectors.getInfo()
     
     # Prepare response based on the presence of deforestation polygons
     if len(deforestation_polygons_geojson['features']) > 0:
