@@ -172,35 +172,37 @@ def check_deforestation():
         protectedAreaArray = {"status":False}
 
     #Onland Check
-    # Load the MODIS Land Cover dataset and select the LC_Type1 band
-    modis_land_cover = ee.ImageCollection('MODIS/006/MCD12Q1').select('LC_Type1')
-
-    # Get the most recent land cover image and clip it to the ROI
-    land_cover_image = modis_land_cover.sort('system:time_start', False).first().clip(roi)
-
-    # Reduce the image to extract land cover type within the polygon
-    land_cover = land_cover_image.reduceRegion(
-        reducer=ee.Reducer.mode(),
+    
+    # Load the JRC Global Surface Water dataset
+    water = ee.Image("JRC/GSW1_4/GlobalSurfaceWater").select('occurrence')
+    
+    # Create a water mask: values greater than 0 indicate the presence of water
+    water_mask = water.gt(0)
+    
+    # Clip the water mask to the ROI (Region of Interest)
+    water_in_polygon = water_mask.clip(roi)
+    
+    # Calculate water presence
+    stats = water_in_polygon.reduceRegion(
+        reducer=ee.Reducer.sum(),
         geometry=roi,
-        scale=500,
-        maxPixels=1e6
+        scale=30,  # Typical scale for GSW
+        maxPixels=1e13
     )
-
-    # Get the dominant land cover type
-    land_cover_type = land_cover.get('LC_Type1')
-
-    # Check if the land cover type corresponds to land
-    is_on_land = ee.Algorithms.If(
-        land_cover_type,
-        ee.Number(land_cover_type).neq(0).And(ee.Number(land_cover_type).neq(17)),
-        False
-    )
-
+    
+    # Get water pixels count (handle None case)
+    water_pixels = stats.get('occurrence')
+    water_pixels = water_pixels.getInfo() if water_pixels else 0
+    
+    # Get water geometry (handle case where no geometry exists)
+    water_as_polygon = water_in_polygon.geometry()
+    waterData = water_as_polygon.getInfo() if water_pixels > 0 else None
+    
     # Evaluate the result and return
-    if is_on_land.getInfo() ==1:
-        onLandArray = {"status": True}
+    if water_pixels > 0:
+        onLandArray = {"status": True, "polygon": waterData}
     else:
-        onLandArray = {"status": False}
+        onLandArray = {"status": False, "polygon": None}
 
     #check for builtuparea   
 
