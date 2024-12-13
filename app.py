@@ -200,9 +200,9 @@ def check_deforestation():
     
     # Evaluate the result and return
     if water_pixels > 0:
-        onLandArray = {"status": True, "polygon": waterData}
+        onLandArray = {"status": False, "polygon": waterData}
     else:
-        onLandArray = {"status": False, "polygon": None}
+        onLandArray = {"status": True, "polygon": None}
 
     #check for builtuparea   
 
