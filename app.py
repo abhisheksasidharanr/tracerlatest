@@ -242,9 +242,45 @@ def check_deforestation():
     
     # Fetch and print the result
     mean_elevation_value = mean_elevation.getInfo()
+
+    #climate
+    # Define the time range
+    start_date = '2023-01-01'
+    end_date = '2023-12-31'
+    
+    # Load CHIRPS dataset for rainfall
+    chirps = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')\
+        .filterDate(start_date, end_date)\
+        .filterBounds(roi)
+    
+    # Sum up daily rainfall for annual total (mm)
+    annual_rainfall = chirps.sum().clip(roi)
+    
+    # Calculate total rainfall within the polygon
+    rainfall_total = annual_rainfall.reduceRegion(
+        reducer=ee.Reducer.sum(),
+        geometry=roi,
+        scale=1000
+    ).get('precipitation')
+    
+    # Load ERA5 dataset for temperature
+    era5 = ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')\
+        .filterDate(start_date, end_date)\
+        .filterBounds(roi)\
+        .select('temperature_2m')
+    
+    # Calculate the average temperature over the year
+    avg_temp = era5.mean().reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=roi,
+        scale=1000
+    ).get('temperature_2m')
+    
+    # Convert from Kelvin to Celsius
+    avg_temp_celsius = ee.Number(avg_temp).subtract(273.15)
     
     result = {
-        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value
+        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value, "temperature":avg_temp_celsius.getInfo(),"rainFall":rainfall_total.getInfo()
     }
     return jsonify(result)
 
