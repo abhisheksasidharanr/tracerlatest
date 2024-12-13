@@ -196,10 +196,18 @@ def check_deforestation():
     
     # Get water geometry (handle case where no geometry exists)
     water_as_polygon = water_in_polygon.geometry()
-    waterData = water_as_polygon.getInfo() if water_pixels > 0 else None
+    
     
     # Evaluate the result and return
     if water_pixels > 0:
+        water_vectors = water_in_polygon.reduceToVectors(
+            geometryType='polygon',
+            reducer=ee.Reducer.countEvery(),
+            scale=30,
+            maxPixels=1e13,
+            geometry=roi
+        )
+        waterData = water_vectors.getInfo()
         onLandArray = {"status": False, "polygon": waterData}
     else:
         onLandArray = {"status": True, "polygon": None}
