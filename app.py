@@ -247,22 +247,23 @@ def check_deforestation():
     # Define the time range
     start_date = '2023-01-01'
     end_date = '2023-12-31'
+    centroid = roi.centroid()
+    # Load CHIRPS daily precipitation data
+    rainfall_dataset = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')\
+        .select('precipitation')\
+        .filterDate(start_date, end_date)
     
-    # Load CHIRPS dataset for rainfall
-    chirps = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')\
-        .filterDate(start_date, end_date)\
-        .filterBounds(roi)
+    # Calculate annual rainfall by summing daily rainfall
+    annual_rainfall_image = rainfall_dataset.sum()
     
-    # Sum up daily rainfall for annual total (mm)
-    annual_rainfall = chirps.sum().clip(roi)
-    
-    # Calculate total rainfall within the polygon
-    rainfall_total = annual_rainfall.reduceRegion(
-        reducer=ee.Reducer.sum(),
-        geometry=roi,
-        scale=1000
-    ).get('precipitation')
-    
+    # Get the rainfall value at the centroid
+    rainfall_at_centroid = annual_rainfall_image.reduceRegion(
+        reducer=ee.Reducer.mean(),
+        geometry=centroid,
+        scale=5566,  # Scale matches CHIRPS resolution
+        bestEffort=True
+    )
+    rainfall_value = rainfall_at_centroid.get('precipitation').getInfo()
     # Load ERA5 dataset for temperature
     era5 = ee.ImageCollection('ECMWF/ERA5_LAND/HOURLY')\
         .filterDate(start_date, end_date)\
@@ -280,7 +281,7 @@ def check_deforestation():
     avg_temp_celsius = ee.Number(avg_temp).subtract(273.15)
     
     result = {
-        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value, "temperature":avg_temp_celsius.getInfo(),"rainFall":rainfall_total.getInfo()
+        "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value, "temperature":avg_temp_celsius.getInfo(),"rainFall":rainfall_value
     }
     return jsonify(result)
 
