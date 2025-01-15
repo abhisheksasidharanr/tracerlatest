@@ -295,7 +295,8 @@ def check_deforestation():
     if avg_temp is None:
         avg_temp_celsius=0
     else:
-        avg_temp_celsius = ee.Number(avg_temp).subtract(273.15).getInfo()
+        avg_temp_celsius=0
+        #avg_temp_celsius = ee.Number(avg_temp).subtract(273.15).getInfo()
     
     
     result = {
