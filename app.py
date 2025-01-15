@@ -291,12 +291,15 @@ def check_deforestation():
         scale=1000
     ).get('temperature_2m')
     
-    # Convert from Kelvin to Celsius only if avg_temp is not None
-    if avg_temp is None:
-        avg_temp_celsius = 0  # Default value if no data is found
-    else:
-        # Convert to Earth Engine number and then subtract 273.15
-        avg_temp_celsius = ee.Number(avg_temp).subtract(273.15).getInfo()
+    # Use ee.Algorithms.If to check if avg_temp is None and then perform conversion
+    avg_temp_celsius = ee.Algorithms.If(
+        ee.Number(avg_temp).isNull(),  # Check if avg_temp is None (null)
+        0,  # Default value if None
+        ee.Number(avg_temp).subtract(273.15)  # Convert from Kelvin to Celsius
+    )
+    
+    # Retrieve the result from Earth Engine
+    avg_temp_celsius = avg_temp_celsius.getInfo()
     
     result = {
         "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value, "temperature":avg_temp_celsius,"rainFall":rainfall_value
