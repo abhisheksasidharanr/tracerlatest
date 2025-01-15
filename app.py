@@ -285,22 +285,20 @@ def check_deforestation():
         .select('temperature_2m')
     
    # Calculate the average temperature over the year
-    # Calculate the average temperature over the year
     avg_temp = era5.mean().reduceRegion(
         reducer=ee.Reducer.mean(),
         geometry=roi,
         scale=1000
     ).get('temperature_2m')
     
-    # Check if avg_temp is null and convert from Kelvin to Celsius
-    avg_temp_celsius = ee.Algorithms.If(
-        avg_temp.isNull(),  # Check if avg_temp is null (null in Earth Engine terms)
-        0,  # Default value if null
-        ee.Number(avg_temp).subtract(273.15)  # Convert from Kelvin to Celsius
-    )
+    # Retrieve the result using getInfo() to check for null in Python
+    avg_temp_value = avg_temp.getInfo()
     
-    # Retrieve the result from Earth Engine
-    avg_temp_celsius = avg_temp_celsius.getInfo()
+    # Check if the value is None (null) and convert accordingly
+    if avg_temp_value is None:
+        avg_temp_celsius = 0  # Default value if no data is found
+    else:
+        avg_temp_celsius = avg_temp_value - 273.15  # Convert from Kelvin to Celsius
     
     result = {
         "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value, "temperature":avg_temp_celsius,"rainFall":rainfall_value
