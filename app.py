@@ -112,7 +112,7 @@ def check_deforestation():
     # Load Dynamic World V1 data for the period after Dec 31, 2020 (2021 onwards)
     dynamicWorld = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
         .filterBounds(roi) \
-        .filterDate('2021-01-01', '2024-12-31') \
+        .filterDate('2021-01-01', '2025-01-31') \
         .select('trees')  # Select the classification band   
     
     
@@ -134,7 +134,7 @@ def check_deforestation():
     if dynamicWorldModeAfter is None:
         deforestationArray = {"status": True, "details": ""}
     else:
-    
+        print(dynamicWorldModeAfter)
         # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
         dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
         
