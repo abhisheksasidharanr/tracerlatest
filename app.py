@@ -112,7 +112,7 @@ def check_deforestation():
     # Load Dynamic World V1 data for the period after Dec 31, 2020 (2021 onwards)
     dynamicWorld = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
         .filterBounds(roi) \
-        .filterDate('2021-01-01', '2025-01-31') \
+        .filterDate('2021-01-01', '2024-12-31') \
         .select('trees')  # Select the classification band   
     
     
@@ -130,38 +130,32 @@ def check_deforestation():
     
     # Calculate the mode of the Dynamic World data before 2020 (most frequent classification)
     dynamicWorldModeBefore = dynamicWorldBefore2020.mode()
-
-    if dynamicWorldModeAfter is None:
-        deforestationArray = {"status": True, "details": ""}
-    else:
-        print(dynamicWorldModeAfter)
-        # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
-        dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
-        
-        # Set a threshold for detecting significant change
-        threshold = 10  # Adjust based on classification changes
-        significantChange = dynamicWorldChange.abs().gt(threshold)
-        
-        # Detect deforestation by overlaying the change detection with the JRC forest map (1 = forest cover)
-        deforestation = significantChange.And(jrc2020Clipped.eq(1))
-        
-        # Vectorize the deforestation areas
-        deforestationVectors = deforestation.reduceToVectors(
-            reducer=ee.Reducer.countEvery(),
-            geometryType='polygon',
-            maxPixels=1e8,
-            scale=30  # Define a reasonable scale for vectorization
-        )
-        # Convert the result to GeoJSON for viewing
-        deforestation_polygons_geojson = deforestationVectors.getInfo()
-        
-        # Prepare response based on the presence of deforestation polygons
-        if len(deforestation_polygons_geojson['features']) > 0:
-            deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
-        else:
-            deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
-
     
+    # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
+    dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
+    
+    # Set a threshold for detecting significant change
+    threshold = 10  # Adjust based on classification changes
+    significantChange = dynamicWorldChange.abs().gt(threshold)
+    
+    # Detect deforestation by overlaying the change detection with the JRC forest map (1 = forest cover)
+    deforestation = significantChange.And(jrc2020Clipped.eq(1))
+    
+    # Vectorize the deforestation areas
+    deforestationVectors = deforestation.reduceToVectors(
+        reducer=ee.Reducer.countEvery(),
+        geometryType='polygon',
+        maxPixels=1e8,
+        scale=30  # Define a reasonable scale for vectorization
+    )
+    # Convert the result to GeoJSON for viewing
+    deforestation_polygons_geojson = deforestationVectors.getInfo()
+    
+    # Prepare response based on the presence of deforestation polygons
+    if len(deforestation_polygons_geojson['features']) > 0:
+        deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
+    else:
+        deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
 
     #protected area check    
     # Load the WDPA dataset
@@ -282,11 +276,9 @@ def check_deforestation():
         geometry=roi,
         scale=1000
     ).get('temperature_2m')
-    if avg_temp is not None:
-        # Convert from Kelvin to Celsius
-        avg_temp_celsius = ee.Number(avg_temp).subtract(273.15)
-    else:
-        avg_temp_celsius = 0
+    
+    # Convert from Kelvin to Celsius
+    avg_temp_celsius = ee.Number(avg_temp).subtract(273.15)
     
     result = {
         "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value, "temperature":avg_temp_celsius.getInfo(),"rainFall":rainfall_value
