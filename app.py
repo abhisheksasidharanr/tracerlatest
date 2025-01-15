@@ -276,9 +276,11 @@ def check_deforestation():
         geometry=roi,
         scale=1000
     ).get('temperature_2m')
-    
-    # Convert from Kelvin to Celsius
-    avg_temp_celsius = ee.Number(avg_temp).subtract(273.15)
+    if(avg_temp!=null)
+        # Convert from Kelvin to Celsius
+        avg_temp_celsius = ee.Number(avg_temp).subtract(273.15)
+    else
+        avg_temp_celsius = 0
     
     result = {
         "polygon":geometry['coordinates'],"area":area, "deforestation" : deforestationArray, "protectedArea":protectedAreaArray, "onLand":onLandArray, "builtupArea": builtupArea, "altitude":mean_elevation_value, "temperature":avg_temp_celsius.getInfo(),"rainFall":rainfall_value
