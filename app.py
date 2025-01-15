@@ -113,53 +113,63 @@ def check_deforestation():
     dynamicWorld = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
         .filterBounds(roi) \
         .filterDate('2021-01-01', '2024-12-31') \
-        .select('trees')  # Select the classification band   
+        .select('trees')  # Select the classification band
     
+    # Preprocess Dynamic World data (add cloud masking if necessary)
+    def mask_clouds(image):
+        return image.updateMask(image.gte(0))  # Ensure valid pixel values only
     
-    # Preprocess Dynamic World data (masking clouds if necessary)
     dynamicWorldPreprocessed = dynamicWorld.map(mask_clouds)
     
-    # Calculate the mode of the Dynamic World data after 2020 (most frequent classification)
-    dynamicWorldModeAfter = dynamicWorldPreprocessed.mode()
+    # Calculate the mode of the Dynamic World data after 2020
+    default_image = ee.Image(0).rename('trees')  # Default fallback image
+    dynamicWorldModeAfter = ee.Algorithms.If(
+        dynamicWorld.size().gt(0),
+        dynamicWorldPreprocessed.mode(),
+        default_image
+    )
+    dynamicWorldModeAfter = ee.Image(dynamicWorldModeAfter)
     
-    # Load Dynamic World V1 data for the period before 2020 (2018-2020)
+    # Load Dynamic World V1 data for the period before 2020 (2020 only in this case)
     dynamicWorldBefore2020 = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
         .filterBounds(roi) \
         .filterDate('2020-01-01', '2020-12-31') \
         .select('trees')  # Select the classification band
     
-    # Calculate the mode of the Dynamic World data before 2020 (most frequent classification)
-    dynamicWorldModeBefore = dynamicWorldBefore2020.mode()
-
-    if dynamicWorld.size().getInfo() == 0 or dynamicWorldBefore2020.size().getInfo() == 0:
-        deforestationArray = {"status": True, "details": ""}
+    # Calculate the mode of the Dynamic World data before 2020
+    dynamicWorldModeBefore = ee.Algorithms.If(
+        dynamicWorldBefore2020.size().gt(0),
+        dynamicWorldBefore2020.mode(),
+        default_image
+    )
+    dynamicWorldModeBefore = ee.Image(dynamicWorldModeBefore)
+    
+    # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
+    dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
+    
+    # Set a threshold for detecting significant change
+    threshold = 10  # Adjust based on classification changes
+    significantChange = dynamicWorldChange.abs().gt(threshold)
+    
+    # Detect deforestation by overlaying the change detection with the JRC forest map (1 = forest cover)
+    deforestation = significantChange.And(jrc2020Clipped.eq(1))
+    
+    # Vectorize the deforestation areas
+    deforestationVectors = deforestation.reduceToVectors(
+        reducer=ee.Reducer.countEvery(),
+        geometryType='polygon',
+        maxPixels=1e8,
+        scale=30  # Define a reasonable scale for vectorization
+    )
+    
+    # Convert the result to GeoJSON for viewing
+    deforestation_polygons_geojson = deforestationVectors.getInfo()
+    
+    # Prepare response based on the presence of deforestation polygons
+    if len(deforestation_polygons_geojson['features']) > 0:
+        deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
     else:
-        
-        # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
-        dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
-        
-        # Set a threshold for detecting significant change
-        threshold = 10  # Adjust based on classification changes
-        significantChange = dynamicWorldChange.abs().gt(threshold)
-        
-        # Detect deforestation by overlaying the change detection with the JRC forest map (1 = forest cover)
-        deforestation = significantChange.And(jrc2020Clipped.eq(1))
-        
-        # Vectorize the deforestation areas
-        deforestationVectors = deforestation.reduceToVectors(
-            reducer=ee.Reducer.countEvery(),
-            geometryType='polygon',
-            maxPixels=1e8,
-            scale=30  # Define a reasonable scale for vectorization
-        )
-        # Convert the result to GeoJSON for viewing
-        deforestation_polygons_geojson = deforestationVectors.getInfo()
-        
-        # Prepare response based on the presence of deforestation polygons
-        if len(deforestation_polygons_geojson['features']) > 0:
-            deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
-        else:
-            deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
+        deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
 
     #protected area check    
     # Load the WDPA dataset
