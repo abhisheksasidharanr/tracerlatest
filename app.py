@@ -291,12 +291,12 @@ def check_deforestation():
         scale=1000
     ).get('temperature_2m')
     
-    # Convert from Kelvin to Celsius
+    # Check if avg_temp is None
     if avg_temp is None:
-        avg_temp_celsius=0
+        avg_temp_celsius = 0  # Default value if no data is found
     else:
-        avg_temp_celsius=0
-        #avg_temp_celsius = ee.Number(avg_temp).subtract(273.15).getInfo()
+        # Convert from Kelvin to Celsius
+        avg_temp_celsius = ee.Number(avg_temp).subtract(273.15).getInfo()
     
     
     result = {
