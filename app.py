@@ -276,10 +276,10 @@ def check_deforestation():
         geometry=roi,
         scale=1000
     ).get('temperature_2m')
-    if(avg_temp!=null)
+    if avg_temp!=null:
         # Convert from Kelvin to Celsius
         avg_temp_celsius = ee.Number(avg_temp).subtract(273.15)
-    else
+    else:
         avg_temp_celsius = 0
     
     result = {
