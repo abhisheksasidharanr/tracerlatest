@@ -130,32 +130,38 @@ def check_deforestation():
     
     # Calculate the mode of the Dynamic World data before 2020 (most frequent classification)
     dynamicWorldModeBefore = dynamicWorldBefore2020.mode()
-    
-    # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
-    dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
-    
-    # Set a threshold for detecting significant change
-    threshold = 10  # Adjust based on classification changes
-    significantChange = dynamicWorldChange.abs().gt(threshold)
-    
-    # Detect deforestation by overlaying the change detection with the JRC forest map (1 = forest cover)
-    deforestation = significantChange.And(jrc2020Clipped.eq(1))
-    
-    # Vectorize the deforestation areas
-    deforestationVectors = deforestation.reduceToVectors(
-        reducer=ee.Reducer.countEvery(),
-        geometryType='polygon',
-        maxPixels=1e8,
-        scale=30  # Define a reasonable scale for vectorization
-    )
-    # Convert the result to GeoJSON for viewing
-    deforestation_polygons_geojson = deforestationVectors.getInfo()
-    
-    # Prepare response based on the presence of deforestation polygons
-    if len(deforestation_polygons_geojson['features']) > 0:
-        deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
+
+    if dynamicWorldModeAfter is None:
+        deforestationArray = {"status": True, "details": ""}
     else:
-        deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
+    
+        # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
+        dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
+        
+        # Set a threshold for detecting significant change
+        threshold = 10  # Adjust based on classification changes
+        significantChange = dynamicWorldChange.abs().gt(threshold)
+        
+        # Detect deforestation by overlaying the change detection with the JRC forest map (1 = forest cover)
+        deforestation = significantChange.And(jrc2020Clipped.eq(1))
+        
+        # Vectorize the deforestation areas
+        deforestationVectors = deforestation.reduceToVectors(
+            reducer=ee.Reducer.countEvery(),
+            geometryType='polygon',
+            maxPixels=1e8,
+            scale=30  # Define a reasonable scale for vectorization
+        )
+        # Convert the result to GeoJSON for viewing
+        deforestation_polygons_geojson = deforestationVectors.getInfo()
+        
+        # Prepare response based on the presence of deforestation polygons
+        if len(deforestation_polygons_geojson['features']) > 0:
+            deforestationArray = {"status": False, "details": deforestation_polygons_geojson}
+        else:
+            deforestationArray = {"status": True, "details": deforestation_polygons_geojson}
+
+    
 
     #protected area check    
     # Load the WDPA dataset
