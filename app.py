@@ -292,10 +292,10 @@ def check_deforestation():
         scale=1000
     ).get('temperature_2m')
     
-    # Use ee.Algorithms.If to check if avg_temp is null and then perform conversion
+    # Check if avg_temp is null and convert from Kelvin to Celsius
     avg_temp_celsius = ee.Algorithms.If(
-        avg_temp.isNull(),  # Check if avg_temp is null
-        0,  # Default value if None
+        avg_temp.isNull(),  # Check if avg_temp is null (null in Earth Engine terms)
+        0,  # Default value if null
         ee.Number(avg_temp).subtract(273.15)  # Convert from Kelvin to Celsius
     )
     
