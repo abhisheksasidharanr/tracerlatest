@@ -285,15 +285,16 @@ def check_deforestation():
         .select('temperature_2m')
     
    # Calculate the average temperature over the year
+    # Calculate the average temperature over the year
     avg_temp = era5.mean().reduceRegion(
         reducer=ee.Reducer.mean(),
         geometry=roi,
         scale=1000
     ).get('temperature_2m')
     
-    # Check if avg_temp is None (null) and handle accordingly
+    # Use ee.Algorithms.If to check if avg_temp is null and then perform conversion
     avg_temp_celsius = ee.Algorithms.If(
-        avg_temp.eq(None),  # Check if avg_temp is None
+        avg_temp.isNull(),  # Check if avg_temp is null
         0,  # Default value if None
         ee.Number(avg_temp).subtract(273.15)  # Convert from Kelvin to Celsius
     )
