@@ -292,7 +292,7 @@ def check_deforestation():
     ).get('temperature_2m')
     
     # Convert from Kelvin to Celsius
-    if dynamicWorldModeAfter is None:
+    if avg_temp is None:
         avg_temp_celsius=0
     else:
         avg_temp_celsius = ee.Number(avg_temp).subtract(273.15).getInfo()
