@@ -103,8 +103,7 @@ def check_deforestation():
     # deforestation_data = deforestation_polygons.getInfo()
 
     # Load JRC Forest Cover 2020 dataset
-    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()    
-    
+    jrc2020 = ee.ImageCollection('JRC/GFC2020/V2').mosaic()
     
     # Clip JRC forest cover data to the ROI
     jrc2020Clipped = jrc2020.clip(roi)
@@ -113,10 +112,13 @@ def check_deforestation():
     dynamicWorld = ee.ImageCollection('GOOGLE/DYNAMICWORLD/V1') \
         .filterBounds(roi) \
         .filterDate('2021-01-01', '2024-12-31') \
-        .select('trees')  # Select the classification band   
-    
+        .select('trees')  # Select the classification band
     
     # Preprocess Dynamic World data (masking clouds if necessary)
+    def mask_clouds(image):
+        # Add cloud masking logic here if needed
+        return image
+    
     dynamicWorldPreprocessed = dynamicWorld.map(mask_clouds)
     
     # Calculate the mode of the Dynamic World data after 2020 (most frequent classification)
@@ -131,8 +133,10 @@ def check_deforestation():
     # Calculate the mode of the Dynamic World data before 2020 (most frequent classification)
     dynamicWorldModeBefore = dynamicWorldBefore2020.mode()
     
-    # Compute the change by subtracting the pre-2020 mode from the post-2020 mode
-    dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
+    # Ensure valid images before performing subtraction
+    dynamicWorldChange = ee.Image(0)  # Default to zero if no valid data
+    if dynamicWorldModeAfter and dynamicWorldModeBefore:
+        dynamicWorldChange = dynamicWorldModeAfter.subtract(dynamicWorldModeBefore)
     
     # Set a threshold for detecting significant change
     threshold = 10  # Adjust based on classification changes
